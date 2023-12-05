@@ -48,6 +48,8 @@ from vllm.sequence import SamplerOutput
 
 KVCache = Tuple[torch.Tensor, torch.Tensor]
 
+def get_tensor_model_parallel_world_size():
+    return 1
 
 class LlamaMLP(nn.Module):
 
@@ -202,6 +204,7 @@ class LlamaDecoderLayer(nn.Module):
         residual: Optional[torch.Tensor],
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         # Self Attention
+        
         if residual is None:
             residual = hidden_states
             hidden_states = self.input_layernorm(hidden_states)
@@ -234,10 +237,10 @@ class LlamaModel(nn.Module):
         self.config = config
         self.padding_idx = config.pad_token_id
         self.vocab_size = config.vocab_size
-        self.embed_tokens = VocabParallelEmbedding(
-            config.vocab_size,
-            config.hidden_size,
-        )
+        # self.embed_tokens = VocabParallelEmbedding(
+        #     config.vocab_size,
+        #     config.hidden_size,
+        # )
         self.layers = nn.ModuleList([
             LlamaDecoderLayer(config, linear_method)
             for _ in range(config.num_hidden_layers)
@@ -280,8 +283,8 @@ class LlamaForCausalLM(nn.Module):
         self.config = config
         self.linear_method = linear_method
         self.model = LlamaModel(config, linear_method)
-        self.lm_head = ParallelLMHead(config.vocab_size, config.hidden_size)
-        self.sampler = Sampler(config.vocab_size)
+        # self.lm_head = ParallelLMHead(config.vocab_size, config.hidden_size)
+        # self.sampler = Sampler(config.vocab_size)
 
     def forward(
         self,
@@ -300,8 +303,9 @@ class LlamaForCausalLM(nn.Module):
         hidden_states: torch.Tensor,
         sampling_metadata: SamplingMetadata,
     ) -> SamplerOutput:
-        next_tokens = self.sampler(self.lm_head.weight, hidden_states,
-                                   sampling_metadata)
+        # next_tokens = self.sampler(self.lm_head.weight, hidden_states,
+        #                            sampling_metadata)
+        next_tokens = hidden_states.shape[1]
         return next_tokens
 
     def load_weights(self,

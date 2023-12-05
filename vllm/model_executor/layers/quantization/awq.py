@@ -79,7 +79,11 @@ class AWQLinearMethod(LinearMethodBase):
 
     def create_weights(self, input_size: int, output_size: int,
                        params_dtype: torch.dtype) -> Dict[str, torch.Tensor]:
-        if input_size % self.quant_config.group_size != 0:
+        if self.quant_config.group_size == -1:
+            group_size = input_size
+        else:
+            group_size = self.quant_config.group_size
+        if input_size % group_size != 0:
             raise ValueError(
                 "The input size is not aligned with the quantized "
                 "weight shape. This can be caused by too large "
@@ -108,7 +112,7 @@ class AWQLinearMethod(LinearMethodBase):
             })
         qzeros = Parameter(
             torch.empty(
-                input_size // self.quant_config.group_size,
+                input_size // group_size,
                 output_size // self.quant_config.pack_factor,
                 device="cuda",
                 dtype=torch.int32,
@@ -124,7 +128,7 @@ class AWQLinearMethod(LinearMethodBase):
             })
         scales = Parameter(
             torch.empty(
-                input_size // self.quant_config.group_size,
+                input_size // group_size,
                 output_size,
                 device="cuda",
                 dtype=params_dtype,

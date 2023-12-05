@@ -33,6 +33,7 @@ class ModelRunner:
         self.block_size = None  # Set after initial profiling.
 
     def load_model(self) -> None:
+        print(f"Loading model {self.model_config}...")
         self.model = get_model(self.model_config)
 
     def set_block_size(self, block_size: int) -> None:
